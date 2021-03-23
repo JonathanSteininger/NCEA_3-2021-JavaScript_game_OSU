@@ -1,0 +1,121 @@
+<!doctype html>
+
+<html>
+
+<head>
+
+
+
+
+</head>
+<meta charset="UTF-8">
+
+<body>
+    <div>
+        <canvas id="gameCanvas">
+            <script>
+                var canvas, canvasContext;
+                window.onload = function() {
+                    canvas = document.getElementById("gameCanvas");
+                    canvasContext = canvas.getContext('2d');
+
+                    canvas.addEventListener("click", function(evt) {
+                        var mousePos = getMousePos(canvas, evt);
+                        console.log(mousePos.x + ',' + mousePos.y);
+                    }, false)
+                    setInterval(mainloop, 1000 / 40);
+                    resizeCanvas();
+                }
+
+
+                function mainloop() {
+                    colourRect(0, 0, canvas.width, canvas.height, "rgb(1,1,1,1)");
+//                    drawCircle(100, 100, 20, "rgb(100,100,100,1)")
+                    drawCurrentBeats();
+
+                }
+                const defaultBeatRadius = 30;
+                var beats = [
+                    [[300,200],defaultBeatRadius,"rgb(255,0,0,1)"],//
+                    [[800,300],defaultBeatRadius,"rgb(255,0,0,1)"],
+                    [[500,400],defaultBeatRadius,"rgb(255,0,0,1)"]
+                ];
+
+                function drawCurrentBeats() {
+                    beats.forEach(Element => {
+                        drawCircle(Element[0][0],Element[0][1],Element[1],Element[2]);
+                        
+                        
+                        
+                    });
+
+                }
+                function checkPress(){
+                    
+                }
+
+
+                function addBeat(x, y, type) {
+
+
+                }
+
+                function resizeCanvas() {
+                    canvas.width = canvas.clientWidth;
+                    canvas.height = canvas.clientHeight;
+                }
+
+                function drawCircle(x, y, radius, c) {
+                    canvasContext.fillStyle = c;
+                    canvasContext.beginPath();
+                    canvasContext.arc(x, y, radius, 0, 2 * Math.PI);
+                    canvasContext.stroke();
+                    canvasContext.fill();
+                }
+
+
+
+
+
+
+                function colourRect(x, y, w, h, c) {
+                    canvasContext.fillStyle = c;
+                    canvasContext.fillRect(x, y, w, h)
+                }
+
+                function getMousePos(canvas, evt) {
+                    var rect = canvas.getBoundingClientRect();
+                    return {
+                        x: evt.clientX - rect.left,
+                        y: evt.clientY - rect.top
+                    };
+                }
+
+            </script>
+        </canvas>
+    </div>
+</body>
+
+</html>
+
+<style>
+    div {
+        width: 1000px;
+        height: 1000px;
+        position: relative
+    }
+
+    canvas {
+        position: absolute;
+        padding: 0;
+        margin: 0;
+        width: 100%;
+        height: 56.25%;
+    }
+
+    * {
+        margin: 0;
+        padding: 0;
+    }
+
+</style>
