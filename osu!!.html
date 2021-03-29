@@ -21,37 +21,93 @@
 
                     canvas.addEventListener("click", function(evt) {
                         var mousePos = getMousePos(canvas, evt);
-                        console.log(mousePos.x + ',' + mousePos.y);
-                    }, false)
+                        //                        console.log(mousePos.x + ',' + mousePos.y);
+                        mouse[0] = mousePos.x;
+                        mouse[1] = mousePos.y;
+                        beatHitDetect();
+                    }, false);
+
+                    //                    var imported = document.createElement('script');
+                    //                    imported.src = '/maps/map1/mapBeats1.js';
+                    //                    document.head.appendChild(imported);
+                    var client = new XMLHttpRequest();
+                    client.open('GET', '/maps/map1/test.txt');
+                    client.onreadystatechange = function() {
+                        alert(client.responseText);
+                    }
+                    client.send();
+
                     setInterval(mainloop, 1000 / 40);
                     resizeCanvas();
                 }
 
-
                 function mainloop() {
                     colourRect(0, 0, canvas.width, canvas.height, "rgb(1,1,1,1)");
-//                    drawCircle(100, 100, 20, "rgb(100,100,100,1)")
                     drawCurrentBeats();
 
+                    mapTimer++;
                 }
-                const defaultBeatRadius = 30;
+                var mapTimer = 0;
+                var DefaultBeatTime = 30;
+                var mouse = [0, 0];
+                var defaultBeat = {
+                    radius: 30,
+                    colour: "rgb(254,0,0,1)",
+                    Bordersize: 5,
+                    BorderColour: "rgb(0,254,0,1)"
+                }
                 var beats = [
-                    [[300,200],defaultBeatRadius,"rgb(255,0,0,1)"],//
-                    [[800,300],defaultBeatRadius,"rgb(255,0,0,1)"],
-                    [[500,400],defaultBeatRadius,"rgb(255,0,0,1)"]
+                    [
+                        [300, 200], 50, defaultBeat.colour, defaultBeat.Bordersize, defaultBeat.BorderColour
+                    ], //
+                    [
+                        [800, 300]
+                    ],
+                    [
+                        [500, 400]
+                    ]
                 ];
 
                 function drawCurrentBeats() {
                     beats.forEach(Element => {
-                        drawCircle(Element[0][0],Element[0][1],Element[1],Element[2]);
-                        
-                        
-                        
+                        if (Element.length > 1) {
+                            drawCircle(Element[0][0], Element[0][1], Element[1], Element[2], Element[3], Element[4]);
+                        } else {
+                            drawCircle(Element[0][0], Element[0][1], defaultBeat.radius, defaultBeat.colour, defaultBeat.Bordersize, defaultBeat.BorderColour);
+                        }
                     });
-
                 }
-                function checkPress(){
-                    
+
+                function beatHitDetect() {
+                    if (beats[0].length > 1) {
+                        if (mouse[0] >= beats[0][0][0] - beats[0][1] && mouse[0] <= beats[0][0][0] + beats[0][1] && mouse[1] >= beats[0][0][1] - beats[0][1] && mouse[1] <= beats[0][0][1] + beats[0][1]) {
+                            let Yintercept1 = Math.sqrt(Math.abs(Math.pow(beats[0][1], 2) - Math.pow(mouse[1] - beats[0][0][1], 2))) + beats[0][0][0];
+                            let Yintercept2 = (-Math.sqrt(Math.abs(Math.pow(beats[0][1], 2) - Math.pow(mouse[1] - beats[0][0][1], 2)))) + beats[0][0][0];
+                            colourRect(Yintercept2, mouse[1], 1, 1, "rgb(255,255,255,1)")
+                            if (mouse[0] >= Yintercept2 && mouse[0] <= Yintercept1) {
+                                beats[0] = "null";
+                                beats = beats.filter(word => word != "null");
+                            } else {
+                                console.log("miss");
+                            }
+                        } else {
+                            console.log("miss");
+                        }
+                    } else {
+                        if (mouse[0] >= beats[0][0][0] - defaultBeat.radius && mouse[0] <= beats[0][0][0] + defaultBeat.radius && mouse[1] >= beats[0][0][1] - defaultBeat.radius && mouse[1] <= beats[0][0][1] + defaultBeat.radius) {
+                            let Yintercept1 = Math.sqrt(Math.abs(Math.pow(defaultBeat.radius, 2) - Math.pow(mouse[1] - beats[0][0][1], 2))) + beats[0][0][0];
+                            let Yintercept2 = (-Math.sqrt(Math.abs(Math.pow(defaultBeat.radius, 2) - Math.pow(mouse[1] - beats[0][0][1], 2)))) + beats[0][0][0];
+                            colourRect(Yintercept2, mouse[1], 1, 1, "rgb(255,255,255,1)")
+                            if (mouse[0] >= Yintercept2 && mouse[0] <= Yintercept1) {
+                                beats[0] = "null";
+                                beats = beats.filter(word => word != "null");
+                            } else {
+                                console.log("miss");
+                            }
+                        } else {
+                            console.log("miss");
+                        }
+                    }
                 }
 
 
@@ -65,18 +121,15 @@
                     canvas.height = canvas.clientHeight;
                 }
 
-                function drawCircle(x, y, radius, c) {
+                function drawCircle(x, y, radius, c, borderwidth, bordercolour) {
+                    canvasContext.strokeStyle = bordercolour;
+                    canvasContext.lineWidth = borderwidth;
                     canvasContext.fillStyle = c;
                     canvasContext.beginPath();
                     canvasContext.arc(x, y, radius, 0, 2 * Math.PI);
                     canvasContext.stroke();
                     canvasContext.fill();
                 }
-
-
-
-
-
 
                 function colourRect(x, y, w, h, c) {
                     canvasContext.fillStyle = c;
