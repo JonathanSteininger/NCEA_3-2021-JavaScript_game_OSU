@@ -5,8 +5,7 @@
 <head>
 
 
-
-
+    <script src="maps/map1/mapBeats1.js"></script>
 </head>
 <meta charset="UTF-8">
 
@@ -27,25 +26,17 @@
                         beatHitDetect();
                     }, false);
 
-                    //                    var imported = document.createElement('script');
-                    //                    imported.src = '/maps/map1/mapBeats1.js';
-                    //                    document.head.appendChild(imported);
-                    var client = new XMLHttpRequest();
-                    client.open('GET', '/maps/map1/test.txt');
-                    client.onreadystatechange = function() {
-                        alert(client.responseText);
-                    }
-                    client.send();
 
-                    setInterval(mainloop, 1000 / 40);
+                    setInterval(mainloop, 1000 / 60);
                     resizeCanvas();
                 }
 
                 function mainloop() {
                     colourRect(0, 0, canvas.width, canvas.height, "rgb(1,1,1,1)");
+                    connectBeats()
                     drawCurrentBeats();
-
-                    mapTimer++;
+                    mapTimer += 1;
+                    //                    console.log(mapTimer);
                 }
                 var mapTimer = 0;
                 var DefaultBeatTime = 30;
@@ -56,33 +47,53 @@
                     Bordersize: 5,
                     BorderColour: "rgb(0,254,0,1)"
                 }
+                var lineConnectionColour = "rgb(255,0,0,0.5)";
+                var currentMap;
                 var beats = [
                     [
-                        [300, 200], 50, defaultBeat.colour, defaultBeat.Bordersize, defaultBeat.BorderColour
+                        0, [300, 200], 50, defaultBeat.colour, defaultBeat.Bordersize, defaultBeat.BorderColour
                     ], //
                     [
-                        [800, 300]
+                        500, [800, 300]
                     ],
                     [
-                        [500, 400]
+                        700, [500, 400]
+                    ],
+                    [
+                        700, [700, 100]
                     ]
                 ];
 
+                function drawLines(x1, y1, x2, y2, c) {
+                    canvasContext.strokeStyle = c;
+                    canvasContext.beginPath();
+                    canvasContext.moveTo(x1, y1);
+                    canvasContext.lineTo(x2, y2);
+                    canvasContext.closePath();
+                    canvasContext.stroke()
+                }
+
+                function connectBeats() {
+                    for (let i = 0; i < beats.length - 1; i++) {
+                        drawLines(beats[i][1][0], beats[i][1][1], beats[i + 1][1][0], beats[i + 1][1][1], lineConnectionColour)
+                    }
+                }
+
                 function drawCurrentBeats() {
                     beats.forEach(Element => {
-                        if (Element.length > 1) {
-                            drawCircle(Element[0][0], Element[0][1], Element[1], Element[2], Element[3], Element[4]);
+                        if (Element.length > 2) {
+                            drawCircle(Element[1][0], Element[1][1], Element[2], Element[3], Element[4], Element[5]);
                         } else {
-                            drawCircle(Element[0][0], Element[0][1], defaultBeat.radius, defaultBeat.colour, defaultBeat.Bordersize, defaultBeat.BorderColour);
+                            drawCircle(Element[1][0], Element[1][1], defaultBeat.radius, defaultBeat.colour, defaultBeat.Bordersize, defaultBeat.BorderColour);
                         }
                     });
                 }
 
                 function beatHitDetect() {
-                    if (beats[0].length > 1) {
-                        if (mouse[0] >= beats[0][0][0] - beats[0][1] && mouse[0] <= beats[0][0][0] + beats[0][1] && mouse[1] >= beats[0][0][1] - beats[0][1] && mouse[1] <= beats[0][0][1] + beats[0][1]) {
-                            let Yintercept1 = Math.sqrt(Math.abs(Math.pow(beats[0][1], 2) - Math.pow(mouse[1] - beats[0][0][1], 2))) + beats[0][0][0];
-                            let Yintercept2 = (-Math.sqrt(Math.abs(Math.pow(beats[0][1], 2) - Math.pow(mouse[1] - beats[0][0][1], 2)))) + beats[0][0][0];
+                    if (beats[0].length > 2) {
+                        if (mouse[0] >= beats[0][1][0] - beats[0][2] && mouse[0] <= beats[0][1][0] + beats[0][2] && mouse[1] >= beats[0][1][1] - beats[0][2] && mouse[1] <= beats[0][1][1] + beats[0][2]) {
+                            let Yintercept1 = Math.sqrt(Math.abs(Math.pow(beats[0][2], 2) - Math.pow(mouse[1] - beats[0][1][1], 2))) + beats[0][1][0];
+                            let Yintercept2 = (-Math.sqrt(Math.abs(Math.pow(beats[0][2], 2) - Math.pow(mouse[1] - beats[0][1][1], 2)))) + beats[0][1][0];
                             colourRect(Yintercept2, mouse[1], 1, 1, "rgb(255,255,255,1)")
                             if (mouse[0] >= Yintercept2 && mouse[0] <= Yintercept1) {
                                 beats[0] = "null";
@@ -94,9 +105,9 @@
                             console.log("miss");
                         }
                     } else {
-                        if (mouse[0] >= beats[0][0][0] - defaultBeat.radius && mouse[0] <= beats[0][0][0] + defaultBeat.radius && mouse[1] >= beats[0][0][1] - defaultBeat.radius && mouse[1] <= beats[0][0][1] + defaultBeat.radius) {
-                            let Yintercept1 = Math.sqrt(Math.abs(Math.pow(defaultBeat.radius, 2) - Math.pow(mouse[1] - beats[0][0][1], 2))) + beats[0][0][0];
-                            let Yintercept2 = (-Math.sqrt(Math.abs(Math.pow(defaultBeat.radius, 2) - Math.pow(mouse[1] - beats[0][0][1], 2)))) + beats[0][0][0];
+                        if (mouse[0] >= beats[0][1][0] - defaultBeat.radius && mouse[0] <= beats[0][1][0] + defaultBeat.radius && mouse[1] >= beats[0][1][1] - defaultBeat.radius && mouse[1] <= beats[0][1][1] + defaultBeat.radius) {
+                            let Yintercept1 = Math.sqrt(Math.abs(Math.pow(defaultBeat.radius, 2) - Math.pow(mouse[1] - beats[0][1][1], 2))) + beats[0][1][0];
+                            let Yintercept2 = (-Math.sqrt(Math.abs(Math.pow(defaultBeat.radius, 2) - Math.pow(mouse[1] - beats[0][1][1], 2)))) + beats[0][1][0];
                             colourRect(Yintercept2, mouse[1], 1, 1, "rgb(255,255,255,1)")
                             if (mouse[0] >= Yintercept2 && mouse[0] <= Yintercept1) {
                                 beats[0] = "null";
