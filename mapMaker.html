@@ -1,0 +1,134 @@
+<!doctype html>
+
+<html>
+
+<head>
+
+    <title>osu!!-maker</title>
+    <script src="Maps.js"></script>
+</head>
+<meta charset="UTF-8">
+
+<body>
+    <div>
+        <p><button onclick="goFullScreen();">Go Fullscreen</button></p>
+        <canvas id="gameCanvas">
+            <script>
+                var canvas, canvasContext;
+                window.onload = function() {
+                    canvas = document.getElementById("gameCanvas");
+                    canvasContext = canvas.getContext('2d');
+
+                    canvas.addEventListener("mousedown",function(evt) {
+                        var mousePos = getMousePos(canvas, evt);
+                        mouse[0] = mousePos.x;
+                        mouse[1] = mousePos.y;
+                        if (gamestart == false) {
+                            startbutton();
+                        } else {
+                            beatHitDetect();
+                        }
+                    }, false);
+                    setInterval(mainloop, 1000 / framesPerSecond);
+                    resizeCanvas();
+                }
+
+                function goFullScreen() {
+                    if (canvas.requestFullScreen)
+                        canvas.requestFullScreen();
+                    else if (canvas.webkitRequestFullScreen)
+                        canvas.webkitRequestFullScreen();
+                    else if (canvas.mozRequestFullScreen)
+                        canvas.mozRequestFullScreen();
+                }
+
+                function mainloop() {
+                    colourRect(0, 0, canvas.width, canvas.height, "rgb(1,1,1,1)");
+                    if (gamestart) {
+                        mapTimer += 1 / framesPerSecond;
+                    } else {
+                        colourRect(canvas.width / 4, canvas.height / 2, canvas.width / 2, canvas.height / 5, "rgb(255,0,0,1)");
+                    }
+                }
+                var gamestart = false;
+                var framesPerSecond = 60;
+                var mapTimer = 0;
+                var mouse = [0, 0];
+                
+
+                function startbutton() {
+                    if (mouse[0] >= canvas.width / 4 && mouse[0] <= canvas.width / 4 * 3 && mouse[1] >= canvas.height / 2 && mouse[1] <= canvas.height / 2 + canvas.height / 5) {
+                        gamestart = true;
+                    }
+                }
+                var newmap = [];
+                function beatHitDetect() {
+                    newmap.push([mapTimer,[mouse[0],mouse[1]]]);
+                }
+                function resizeCanvas() {
+                    canvas.width = canvas.clientWidth;
+                    canvas.height = canvas.clientHeight;
+                }
+
+                function drawCircle(x, y, radius, c, borderwidth, bordercolour) {
+                    canvasContext.strokeStyle = bordercolour;
+                    canvasContext.lineWidth = borderwidth;
+                    canvasContext.fillStyle = c;
+                    canvasContext.beginPath();
+                    canvasContext.arc(x, y, radius, 0, 2 * Math.PI);
+                    canvasContext.stroke();
+                    canvasContext.fill();
+                }
+
+                function colourRect(x, y, w, h, c) {
+                    canvasContext.fillStyle = c;
+                    canvasContext.fillRect(x, y, w, h)
+                }
+
+                function getMousePos(canvas, evt) {
+                    var rect = canvas.getBoundingClientRect();
+                    return {
+                        x: evt.clientX - rect.left,
+                        y: evt.clientY - rect.top
+                    };
+                }
+
+            </script>
+        </canvas>
+    </div>
+</body>
+
+</html>
+
+<style>
+    div {
+        width: 1920px;
+        height: 1920px;
+        position: relative;
+    }
+
+    canvas {
+        position: absolute;
+        padding: 0;
+        margin: 0;
+        width: 100%;
+        height: 56.25%;
+    }
+
+    * {
+        margin: 0;
+        padding: 0;
+    }
+
+    html {
+        overflow-y: hidden;
+    }
+
+    button {
+        width: 100vw;
+        height: 50vh;
+        margin-bottom: 50vw;
+        font-size: 5vw;
+    }
+
+</style>

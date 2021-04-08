@@ -4,13 +4,14 @@
 
 <head>
 
-
-    <script src="maps/map1/mapBeats1.js"></script>
+    <title>osu!!</title>
+    <script src="Maps.js"></script>
 </head>
 <meta charset="UTF-8">
 
 <body>
     <div>
+        <p><button onclick="goFullScreen();">Go Fullscreen</button></p>
         <canvas id="gameCanvas">
             <script>
                 var canvas, canvasContext;
@@ -18,54 +19,153 @@
                     canvas = document.getElementById("gameCanvas");
                     canvasContext = canvas.getContext('2d');
 
-                    canvas.addEventListener("click", function(evt) {
+                    //                    canvas.addEventListener("click", function(evt) {
+                    canvas.addEventListener("mousedown", function(evt) {
                         var mousePos = getMousePos(canvas, evt);
                         //                        console.log(mousePos.x + ',' + mousePos.y);
                         mouse[0] = mousePos.x;
                         mouse[1] = mousePos.y;
-                        beatHitDetect();
+                        if (gamestart == false) {
+                            startbutton();
+                        } else if (beats.length > 0) {
+                            beatHitDetect();
+                        }
                     }, false);
-
-
-                    setInterval(mainloop, 1000 / 60);
+                    gamerun();
+                    lineCalculate();
+                    setInterval(mainloop, 1000 / framesPerSecond);
                     resizeCanvas();
+                }
+
+                function goFullScreen() {
+                    if (canvas.requestFullScreen)
+                        canvas.requestFullScreen();
+                    else if (canvas.webkitRequestFullScreen)
+                        canvas.webkitRequestFullScreen();
+                    else if (canvas.mozRequestFullScreen)
+                        canvas.mozRequestFullScreen();
                 }
 
                 function mainloop() {
                     colourRect(0, 0, canvas.width, canvas.height, "rgb(1,1,1,1)");
-                    connectBeats()
-                    drawCurrentBeats();
-                    mapTimer += 1;
+                    if (currentMap.length <= 0 && beats.length <= 0) {
+                        if (score > 0) {
+                            console.log(score);
+                        }
+                        gamestart = false;
+                        mapTimer = 0;
+                        score = 0;
+                    }
+                    if (gamestart) {
+                        mapTimer += 1 / framesPerSecond;
+                        nextBeat();
+                        nextLines();
+                        drawlines();
+                        if (beats.length > 0) {
+                            drawCurrentBeats();
+                        }
+                        //                        console.log(mapTimer);
+                    } else {
+                        colourRect(canvas.width / 4, canvas.height / 2, canvas.width / 2, canvas.height / 5, "rgb(255,0,0,1)");
+                    }
                     //                    console.log(mapTimer);
                 }
+                var score = 0;
+                var gamestart = false;
+                var framesPerSecond = 60;
                 var mapTimer = 0;
                 var DefaultBeatTime = 30;
                 var mouse = [0, 0];
-                var defaultBeat = {
-                    radius: 30,
-                    colour: "rgb(254,0,0,1)",
-                    Bordersize: 5,
-                    BorderColour: "rgb(0,254,0,1)"
-                }
-                var lineConnectionColour = "rgb(255,0,0,0.5)";
-                var currentMap;
-                var beats = [
-                    [
-                        0, [300, 200], 50, defaultBeat.colour, defaultBeat.Bordersize, defaultBeat.BorderColour
-                    ], //
-                    [
-                        500, [800, 300]
-                    ],
-                    [
-                        700, [500, 400]
-                    ],
-                    [
-                        700, [700, 100]
-                    ]
-                ];
+                var lineConnectionColour = "rgb(255,0,0,1)";
+                var currentMap = [];
+                var beats = [];
+                var linePositions = [];
+                var lineSmoothness = 100;
+                var currentlines = [];
 
-                function drawLines(x1, y1, x2, y2, c) {
+                function lineCalculate() {
+                    linePositions = [];
+                    for (let ii = 0; ii < currentMap.length; ii++) {
+                        for (let i = 0; i < lineSmoothness; i++) {
+                            var timeA = 0;
+                            var posA = 0;
+                            var posB = 0;
+                            if (ii == 0) { //canvas.width/2   canvas.height/2
+                                timeA = (currentMap[ii][0] / lineSmoothness) * i;
+                                posA = [canvas.width / 2 + (((currentMap[ii][1][0] - canvas.width / 2) / lineSmoothness) * i), canvas.height / 2 + (((currentMap[ii][1][1] - canvas.height / 2) / lineSmoothness) * i)];
+                                posB = [canvas.width / 2 + (((currentMap[ii][1][0] - canvas.width / 2) / lineSmoothness) * (i + 1)), canvas.height / 2 + (((currentMap[ii][1][1] - canvas.height / 2) / lineSmoothness) * (i + 1))];
+                            } else {
+                                timeA = currentMap[ii - 1][0] + (((currentMap[ii][0] - currentMap[ii - 1][0]) / lineSmoothness) * i);
+                                posA = [currentMap[ii - 1][1][0] + (((currentMap[ii][1][0] - currentMap[ii - 1][1][0]) / lineSmoothness) * i), currentMap[ii - 1][1][1] + (((currentMap[ii][1][1] - currentMap[ii - 1][1][1]) / lineSmoothness) * i)];
+                                posB = [currentMap[ii - 1][1][0] + (((currentMap[ii][1][0] - currentMap[ii - 1][1][0]) / lineSmoothness) * (i + 1)), currentMap[ii - 1][1][1] + (((currentMap[ii][1][1] - currentMap[ii - 1][1][1]) / lineSmoothness) * (i + 1))];
+                            }
+                            linePositions.push([timeA, posA, posB, 0]); //when they apear, where they appear, where iot end go, lifetime 
+                        }
+                    }
+                }
+                var nextlinecounter = 0;
+
+                function nextLines() {
+                    let tempvar = 0;
+                    if (linePositions.length - nextlinecounter > 20) {
+                        for (let i = 0; i <= 20; i++) {
+                            if (linePositions[nextlinecounter + i][0] <= mapTimer) {
+                                currentlines.push(linePositions[nextlinecounter + i]);
+                                tempvar++;
+                            }
+                        }
+                    }else{
+                        for (let i = 0; i < linePositions.length - nextlinecounter; i++) {
+                            if (linePositions[nextlinecounter + i][0] <= mapTimer) {
+                                currentlines.push(linePositions[nextlinecounter + i]);
+                                tempvar++;
+                            }
+                        }
+                    }
+                    nextlinecounter += tempvar;
+                }//101
+                var removedcounter = 0;
+
+                function drawlines() {
+                    if (currentlines.length > 0) {
+                        for (let i = removedcounter; i < currentlines.length; i++) {
+                            currentlines[i][3] += 1 / framesPerSecond;
+                            if (currentlines[i][3] <= failTimer) {
+                                drawpath(currentlines[i][1][0], currentlines[i][1][1], currentlines[i][2][0], currentlines[i][2][1], lineConnectionColour, 5);
+                            } else {
+                                removedcounter++;
+                            }
+                        }
+                    }
+                }
+
+                function nextBeat() {
+                    if (currentMap.length <= 0) {
+                        return;
+                    }
+                    if (mapTimer >= currentMap[0][0]) {
+                        beats.push(currentMap[0]);
+                        beats[beats.length - 1][0] = 0;
+                        currentMap.shift();
+                    }
+                }
+
+                function startbutton() {
+                    if (mouse[0] >= canvas.width / 4 && mouse[0] <= canvas.width / 4 * 3 && mouse[1] >= canvas.height / 2 && mouse[1] <= canvas.height / 2 + canvas.height / 5) {
+                        gamestart = true;
+                        gamerun();
+                    }
+                }
+
+                function gamerun() {
+                    currentMap = JSON.parse(JSON.stringify(map3[1]));
+                    beats = [];
+                    currentlines = [];
+                }
+
+                function drawpath(x1, y1, x2, y2, c, w) {
                     canvasContext.strokeStyle = c;
+                    canvasContext.lineWidth = w;
                     canvasContext.beginPath();
                     canvasContext.moveTo(x1, y1);
                     canvasContext.lineTo(x2, y2);
@@ -73,20 +173,18 @@
                     canvasContext.stroke()
                 }
 
-                function connectBeats() {
-                    for (let i = 0; i < beats.length - 1; i++) {
-                        drawLines(beats[i][1][0], beats[i][1][1], beats[i + 1][1][0], beats[i + 1][1][1], lineConnectionColour)
-                    }
-                }
-
                 function drawCurrentBeats() {
                     beats.forEach(Element => {
+                        Element[0] += 1 / framesPerSecond;
                         if (Element.length > 2) {
                             drawCircle(Element[1][0], Element[1][1], Element[2], Element[3], Element[4], Element[5]);
                         } else {
                             drawCircle(Element[1][0], Element[1][1], defaultBeat.radius, defaultBeat.colour, defaultBeat.Bordersize, defaultBeat.BorderColour);
                         }
                     });
+                    if (beats[0][0] >= failTimer) {
+                        beats.shift();
+                    }
                 }
 
                 function beatHitDetect() {
@@ -96,8 +194,8 @@
                             let Yintercept2 = (-Math.sqrt(Math.abs(Math.pow(beats[0][2], 2) - Math.pow(mouse[1] - beats[0][1][1], 2)))) + beats[0][1][0];
                             colourRect(Yintercept2, mouse[1], 1, 1, "rgb(255,255,255,1)")
                             if (mouse[0] >= Yintercept2 && mouse[0] <= Yintercept1) {
-                                beats[0] = "null";
-                                beats = beats.filter(word => word != "null");
+                                beats.shift();
+                                score++;
                             } else {
                                 console.log("miss");
                             }
@@ -110,8 +208,8 @@
                             let Yintercept2 = (-Math.sqrt(Math.abs(Math.pow(defaultBeat.radius, 2) - Math.pow(mouse[1] - beats[0][1][1], 2)))) + beats[0][1][0];
                             colourRect(Yintercept2, mouse[1], 1, 1, "rgb(255,255,255,1)")
                             if (mouse[0] >= Yintercept2 && mouse[0] <= Yintercept1) {
-                                beats[0] = "null";
-                                beats = beats.filter(word => word != "null");
+                                beats.shift();
+                                score++;
                             } else {
                                 console.log("miss");
                             }
@@ -164,9 +262,9 @@
 
 <style>
     div {
-        width: 1000px;
-        height: 1000px;
-        position: relative
+        width: 1920px;
+        height: 1920px;
+        position: relative;
     }
 
     canvas {
@@ -180,6 +278,17 @@
     * {
         margin: 0;
         padding: 0;
+    }
+
+    html {
+        overflow-y: hidden;
+    }
+
+    button {
+        width: 100vw;
+        height: 50vh;
+        margin-bottom: 50vw;
+        font-size: 5vw;
     }
 
 </style>
