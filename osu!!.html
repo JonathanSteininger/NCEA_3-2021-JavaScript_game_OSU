@@ -10,7 +10,7 @@
 <meta charset="UTF-8">
 
 <body>
-    <div>
+    <div id="canvasContainer">
         <p><button onclick="goFullScreen();">Go Fullscreen</button></p>
         <canvas id="gameCanvas">
             <script>
@@ -19,10 +19,9 @@
                     canvas = document.getElementById("gameCanvas");
                     canvasContext = canvas.getContext('2d');
 
-                    //                    canvas.addEventListener("click", function(evt) {
                     canvas.addEventListener("mousedown", function(evt) {
                         var mousePos = getMousePos(canvas, evt);
-                        //                        console.log(mousePos.x + ',' + mousePos.y);
+                        mouseDown = true;
                         mouse[0] = mousePos.x;
                         mouse[1] = mousePos.y;
                         if (gamestart == false) {
@@ -31,8 +30,17 @@
                             beatHitDetect();
                         }
                     }, false);
+                    canvas.addEventListener("mouseup", function(evt) {
+                        mouseDown = false;
+                    }, false);
+
+                    canvas.addEventListener('mousemove', function(evt) {
+                        var mousePos = getMousePos(canvas, evt);
+                        mouse[0] = mousePos.x;
+                        mouse[1] = mousePos.y;
+                    }, false);
+
                     gamerun();
-                    lineCalculate();
                     setInterval(mainloop, 1000 / framesPerSecond);
                     resizeCanvas();
                 }
@@ -47,7 +55,7 @@
                 }
 
                 function mainloop() {
-                    colourRect(0, 0, canvas.width, canvas.height, "rgb(1,1,1,1)");
+                    colourRect(0, 0, canvas.width, canvas.height, "rgb(50,50,50,1)");
                     if (currentMap.length <= 0 && beats.length <= 0) {
                         if (score > 0) {
                             console.log(score);
@@ -59,93 +67,203 @@
                     if (gamestart) {
                         mapTimer += 1 / framesPerSecond;
                         nextBeat();
-                        nextLines();
-                        drawlines();
+                        nextpaths();
+                        drawcurrentlines()
                         if (beats.length > 0) {
                             drawCurrentBeats();
                         }
-                        //                        console.log(mapTimer);
                     } else {
                         colourRect(canvas.width / 4, canvas.height / 2, canvas.width / 2, canvas.height / 5, "rgb(255,0,0,1)");
                     }
-                    //                    console.log(mapTimer);
                 }
+                var mouseDown = false;
+
                 var score = 0;
                 var gamestart = false;
                 var framesPerSecond = 60;
                 var mapTimer = 0;
                 var DefaultBeatTime = 30;
                 var mouse = [0, 0];
-                var lineConnectionColour = "rgb(255,0,0,1)";
+                var lineConnectionColour1 = "rgb(255,255,255,0.5)";
+                var lineConnectionColour2 = "rgb(255,255,255,0)";
+                var lineConnectionwidth = 3;
+                var linegradientstrength = 0;
                 var currentMap = [];
                 var beats = [];
                 var linePositions = [];
-                var lineSmoothness = 100;
                 var currentlines = [];
 
-                function lineCalculate() {
-                    linePositions = [];
-                    for (let ii = 0; ii < currentMap.length; ii++) {
-                        for (let i = 0; i < lineSmoothness; i++) {
-                            var timeA = 0;
-                            var posA = 0;
-                            var posB = 0;
-                            if (ii == 0) { //canvas.width/2   canvas.height/2
-                                timeA = (currentMap[ii][0] / lineSmoothness) * i;
-                                posA = [canvas.width / 2 + (((currentMap[ii][1][0] - canvas.width / 2) / lineSmoothness) * i), canvas.height / 2 + (((currentMap[ii][1][1] - canvas.height / 2) / lineSmoothness) * i)];
-                                posB = [canvas.width / 2 + (((currentMap[ii][1][0] - canvas.width / 2) / lineSmoothness) * (i + 1)), canvas.height / 2 + (((currentMap[ii][1][1] - canvas.height / 2) / lineSmoothness) * (i + 1))];
+
+
+
+
+                function drawdragbackground(positions, c, w) {
+                    canvasContext.strokeStyle = "rgb(200,200,200,1)";
+                    canvasContext.lineWidth = w * 2;
+                    canvasContext.beginPath();
+                    canvasContext.moveTo(positions[0][1][0], positions[0][1][1]);
+                    for (let i = 1; i < positions.length; i++) {
+                        canvasContext.lineTo(positions[i][1][0], positions[i][1][1]);
+                    }
+                    canvasContext.closePath();
+                    canvasContext.stroke()
+                    for (let i = 0; i < positions.length; i++) {
+                        drawCircle(positions[i][1][0], positions[i][1][1], w, "rgb(200,200,200,1)", 5, "rgb(200,200,200,0)");
+                    }
+                }
+
+                var lineSmoothness = 10; //smaller = smoother
+                function makelines() {
+                    currentlinepos = [];
+                    currentlines = [];
+                    linenextcounter = [];
+                    completedlines = 0;
+                    for (let i = 0; i < currentMap.length; i++) {
+                        currentlinepos.push([]);
+                        currentlines.push([]);
+                        linenextcounter.push([0, 0]);
+
+                        if (currentMap[i][0] == 0) {
+                            if (i == 0) {
+                                var amountofFrames = Math.sqrt(Math.pow(Math.abs(canvas.width / 2 - currentMap[i][2][0]), 2) + Math.pow(Math.abs(canvas.height / 2 - currentMap[i][2][1]), 2)) / lineSmoothness;
+                                var yintercept69 = canvas.height / 2 - (((currentMap[i][2][1] - canvas.height / 2) / (currentMap[i][2][0] - canvas.width / 2)) * canvas.width / 2);
+                                for (let ii = 0; ii < amountofFrames; ii++) {
+                                    let time = 0 + (((currentMap[i][1] - 0) / amountofFrames) * ii);
+                                    let xpos = canvas.width / 2 + (((currentMap[i][2][0] - canvas.width / 2) / amountofFrames) * ii);
+                                    let ypos = (((currentMap[i][2][1] - canvas.height / 2) / (currentMap[i][2][0] - canvas.width / 2)) * xpos) + yintercept69;
+                                    currentlinepos[i].push([time, [xpos, ypos], 0]);
+                                }
                             } else {
-                                timeA = currentMap[ii - 1][0] + (((currentMap[ii][0] - currentMap[ii - 1][0]) / lineSmoothness) * i);
-                                posA = [currentMap[ii - 1][1][0] + (((currentMap[ii][1][0] - currentMap[ii - 1][1][0]) / lineSmoothness) * i), currentMap[ii - 1][1][1] + (((currentMap[ii][1][1] - currentMap[ii - 1][1][1]) / lineSmoothness) * i)];
-                                posB = [currentMap[ii - 1][1][0] + (((currentMap[ii][1][0] - currentMap[ii - 1][1][0]) / lineSmoothness) * (i + 1)), currentMap[ii - 1][1][1] + (((currentMap[ii][1][1] - currentMap[ii - 1][1][1]) / lineSmoothness) * (i + 1))];
+                                if (currentMap[i - 1][0] == 0) {
+                                    var yintercept69 = currentMap[i - 1][2][1] - (((currentMap[i][2][1] - currentMap[i - 1][2][1]) / (currentMap[i][2][0] - currentMap[i - 1][2][0])) * currentMap[i - 1][2][0]);
+                                    var amountofFrames = Math.sqrt(Math.pow(Math.abs(currentMap[i - 1][2][0] - currentMap[i][2][0]), 2) + Math.pow(Math.abs(currentMap[i - 1][2][1] - currentMap[i][2][1]), 2)) / lineSmoothness;
+
+                                    for (let ii = 0; ii < amountofFrames; ii++) {
+                                        let time = currentMap[i - 1][1] + (((currentMap[i][1] - currentMap[i - 1][1]) / amountofFrames) * ii);
+                                        let xpos = currentMap[i - 1][2][0] + (((currentMap[i][2][0] - currentMap[i - 1][2][0]) / amountofFrames) * ii);
+                                        let ypos = (((currentMap[i][2][1] - currentMap[i - 1][2][1]) / (currentMap[i][2][0] - currentMap[i - 1][2][0])) * xpos) + yintercept69;
+                                        currentlinepos[i].push([time, [xpos, ypos], 0]);
+                                    }
+                                } else {
+                                    var yintercept69 = currentMap[i - 1][2][currentMap[i - 1][2].length - 1][1][1] - (((currentMap[i][2][1] - currentMap[i - 1][2][currentMap[i - 1][2].length - 1][1][1]) / (currentMap[i][2][0] - currentMap[i - 1][2][
+                                        currentMap[i - 1][2].length - 1
+                                    ][1][0])) * currentMap[i - 1][2][currentMap[i - 1][2].length - 1][1][0]);
+                                    var amountofFrames = Math.sqrt(Math.pow(Math.abs(currentMap[i - 1][2][currentMap[i - 1][2].length - 1][1][0] - currentMap[i][2][0]), 2) + Math.pow(Math.abs(currentMap[i - 1][2][currentMap[i - 1][2].length - 1][1][
+                                        1
+                                    ] - currentMap[i][2][1]), 2)) / lineSmoothness;
+                                    for (let ii = 0; ii < amountofFrames; ii++) {
+                                        let time = currentMap[i - 1][2][currentMap[i - 1][2].length - 1][0] + (((currentMap[i][1] - currentMap[i - 1][2][currentMap[i - 1][2].length - 1][0]) / amountofFrames) * ii);
+                                        let xpos = currentMap[i - 1][2][currentMap[i - 1][2].length - 1][1][0] + (((currentMap[i][2][0] - currentMap[i - 1][2][currentMap[i - 1][2].length - 1][1][0]) / amountofFrames) * ii);
+                                        let ypos = (((currentMap[i][2][1] - currentMap[i - 1][2][currentMap[i - 1][2].length - 1][1][1]) / (currentMap[i][2][0] - currentMap[i - 1][2][currentMap[i - 1][2].length - 1][1][0])) * xpos) + yintercept69;
+                                        currentlinepos[i].push([time, [xpos, ypos], 0]);
+                                    }
+                                }
                             }
-                            linePositions.push([timeA, posA, posB, 0]); //when they apear, where they appear, where iot end go, lifetime 
+                        } else {
+                            if (i == 0) {
+                                var amountofFrames = Math.sqrt(Math.pow(Math.abs(canvas.width / 2 - currentMap[i][2][0][1][0]), 2) + Math.pow(Math.abs(canvas.height / 2 - currentMap[i][2][0][1][1]), 2)) / lineSmoothness;
+                                var yintercept69 = canvas.height / 2 - (((currentMap[i][2][0][1][1] - canvas.height / 2) / (currentMap[i][2][0][1][0] - canvas.width / 2)) * canvas.width / 2);
+                                for (let ii = 0; ii < amountofFrames; ii++) {
+                                    let time = 0 + (((currentMap[i][1] - 0) / amountofFrames) * ii);
+                                    let xpos = canvas.width / 2 + (((currentMap[i][2][0][1][0] - canvas.width / 2) / amountofFrames) * ii);
+                                    let ypos = (((currentMap[i][2][0][1][1] - canvas.height / 2) / (currentMap[i][2][0][1][0] - canvas.width / 2)) * xpos) + yintercept69;
+                                    currentlinepos[i].push([time, [xpos, ypos], 0]);
+                                }
+                            } else {
+                                if (currentMap[i - 1][0] == 0) {
+                                    var yintercept69 = currentMap[i - 1][2][1] - (((currentMap[i][2][0][1][1] - currentMap[i - 1][2][1]) / (currentMap[i][2][0][1][0] - currentMap[i - 1][2][0])) * currentMap[i - 1][2][0]);
+                                    var amountofFrames = Math.sqrt(Math.pow(Math.abs(currentMap[i - 1][2][0] - currentMap[i][2][0][1][0]), 2) + Math.pow(Math.abs(currentMap[i - 1][2][1] - currentMap[i][2][0][1][1]), 2)) / lineSmoothness;
+                                    for (let ii = 0; ii < amountofFrames; ii++) {
+                                        let time = currentMap[i - 1][1] + (((currentMap[i][1] - currentMap[i - 1][1]) / amountofFrames) * ii);
+                                        let xpos = currentMap[i - 1][2][0] + (((currentMap[i][2][0][1][0] - currentMap[i - 1][2][0]) / amountofFrames) * ii);
+                                        let ypos = (((currentMap[i][2][0][1][1] - currentMap[i - 1][2][1]) / (currentMap[i][2][0][1][0] - currentMap[i - 1][2][0])) * xpos) + yintercept69;
+                                        currentlinepos[i].push([time, [xpos, ypos], 0]);
+                                    }
+                                } else {
+                                    var yintercept69 = currentMap[i - 1][2][0][1][1] - (((currentMap[i][2][0][1][1] - currentMap[i - 1][2][0][1][1]) / (currentMap[i][2][0][1][0] - currentMap[i - 1][2][0][1][0])) * currentMap[i - 1][2][0][1][0]);
+                                    var amountofFrames = Math.sqrt(Math.pow(Math.abs(currentMap[i - 1][2][0][1][0] - currentMap[i][2][0][1][0]), 2) + Math.pow(Math.abs(currentMap[i - 1][2][1] - currentMap[i][2][0][1][1]), 2)) / lineSmoothness;
+                                    for (let ii = 0; ii < amountofFrames; ii++) {
+                                        let time = currentMap[i - 1][1][currentMap[i - 1][2].length - 1][0] + (((currentMap[i][1] - currentMap[i - 1][2][currentMap[i - 1][2].length - 1][0]) / amountofFrames) * ii);
+                                        let xpos = currentMap[i - 1][2][currentMap[i - 1][2].length - 1][1][0] + (((currentMap[i][2][0][1][0] - currentMap[i - 1][2][currentMap[i - 1][2].length - 1][1][0]) / amountofFrames) * ii);
+                                        let ypos = (((currentMap[i][2][0][1][1] - currentMap[i - 1][2][currentMap[i - 1][2].length - 1][1][1]) / (currentMap[i][2][0][1][0] - currentMap[i - 1][2][currentMap[i - 1][2].length - 1][1][0])) * xpos) +
+                                            yintercept69;
+                                        currentlinepos[i].push([time, [xpos, ypos], 0]);
+                                    }
+                                }
+                            }
                         }
                     }
                 }
-                var nextlinecounter = 0;
+                var currentlinepos = []; //[line,line,line]//line= [time,[xpos,ypos],timer]
 
-                function nextLines() {
-                    let tempvar = 0;
-                    if (linePositions.length - nextlinecounter > 20) {
-                        for (let i = 0; i <= 20; i++) {
-                            if (linePositions[nextlinecounter + i][0] <= mapTimer) {
-                                currentlines.push(linePositions[nextlinecounter + i]);
-                                tempvar++;
+                var linenextcounter = [];
+
+                var currentlines = [];
+
+                var completedlines = 0;
+
+                function nextpaths() {
+                    for (let ii = 0; ii < currentlinepos.length; ii++) {
+                        for (let i = linenextcounter[ii][1]; i < currentlinepos[ii].length; i++) {
+                            if (currentlinepos[ii][0][0] <= mapTimer) {
+                                if (currentlinepos[ii][i][0] <= mapTimer) {
+                                    if (linenextcounter[ii][1] == 0) {
+                                        currentlines[ii].push(currentlinepos[ii][0][1], currentlinepos[ii][1][1]);
+                                    }
+                                    linenextcounter[ii][1] = i;
+                                }
                             }
                         }
-                    }else{
-                        for (let i = 0; i < linePositions.length - nextlinecounter; i++) {
-                            if (linePositions[nextlinecounter + i][0] <= mapTimer) {
-                                currentlines.push(linePositions[nextlinecounter + i]);
-                                tempvar++;
+                        if (currentlines[ii].length > 0) {
+                            for (let b = 0; b <= 1; b++) {
+                                if (currentlines[ii][b] != currentlinepos[ii][linenextcounter[ii][b]][1]) {
+                                    currentlines[ii][b] = currentlinepos[ii][linenextcounter[ii][b]][1];
+                                }
+                            }
+                        }
+                        if (linenextcounter[ii][1] > 0) {
+                            for (let i = linenextcounter[ii][0]; i < linenextcounter[ii][1]; i++) {
+                                currentlinepos[ii][i][2] += 1 / framesPerSecond;
+                                if (currentlinepos[ii][i][2] >= failTimer) {
+                                    linenextcounter[ii][0] = i + 1;
+                                }
                             }
                         }
                     }
-                    nextlinecounter += tempvar;
-                }//101
-                var removedcounter = 0;
+                }
 
-                function drawlines() {
-                    if (currentlines.length > 0) {
-                        for (let i = removedcounter; i < currentlines.length; i++) {
-                            currentlines[i][3] += 1 / framesPerSecond;
-                            if (currentlines[i][3] <= failTimer) {
-                                drawpath(currentlines[i][1][0], currentlines[i][1][1], currentlines[i][2][0], currentlines[i][2][1], lineConnectionColour, 5);
-                            } else {
-                                removedcounter++;
-                            }
+                function drawcurrentlines() {
+                    for (let i = 0; i < currentlines.length; i++) {
+                        if (currentlines[i].length > 0) {
+                            drawpath(currentlines[i][0][0], currentlines[i][0][1], currentlines[i][1][0], currentlines[i][1][1], lineConnectionColour1, lineConnectionColour2, lineConnectionwidth, currentlinepos[i][0][1],currentlinepos[i][currentlinepos[i].length-1][1],linegradientstrength)
                         }
                     }
+                }
+
+                function drawpath(x1, y1, x2, y2, c1, c2, w, grdxy1, grdxy2, gradstrength) {
+                    // let grd = ctx.createRadialGradient(200, 200, 0, 200, 200, 200);//x,y,centergrad radius,outsideX,outsideY, radius.
+                    let xcenter = (grdxy1[0]-grdxy2[0])/2 + grdxy2[0];
+                    let ycenter = (grdxy1[1]-grdxy2[1])/2 + grdxy2[1];
+                    let radius = Math.sqrt(Math.pow(Math.abs(grdxy1[0] - grdxy2[0]), 2) + Math.pow(Math.abs(grdxy1[1] - grdxy2[1]), 2))/2;
+                    let grd = canvasContext.createRadialGradient(xcenter, ycenter, 0, xcenter, ycenter, radius);//
+                    grd.addColorStop(0, c1);
+                    grd.addColorStop(1, c2);
+                    canvasContext.strokeStyle = grd;
+                    canvasContext.lineWidth = w;
+                    canvasContext.beginPath();
+                    canvasContext.moveTo(x1, y1);
+                    canvasContext.lineTo(x2, y2);
+                    canvasContext.closePath();
+                    canvasContext.stroke();
                 }
 
                 function nextBeat() {
                     if (currentMap.length <= 0) {
                         return;
                     }
-                    if (mapTimer >= currentMap[0][0]) {
+                    if (mapTimer >= currentMap[0][1]) {
                         beats.push(currentMap[0]);
-                        beats[beats.length - 1][0] = 0;
+                        beats[beats.length - 1][1] = 0;
                         currentMap.shift();
                     }
                 }
@@ -158,58 +276,167 @@
                 }
 
                 function gamerun() {
-                    currentMap = JSON.parse(JSON.stringify(map3[1]));
+                    currentMap = JSON.parse(JSON.stringify(mapTest[1]));
                     beats = [];
                     currentlines = [];
+                    makelines();
+                    //                    lineCalculate();
+                    //                    nextlinecounter = 0;
+                    removedcounter = 0;
                 }
 
-                function drawpath(x1, y1, x2, y2, c, w) {
-                    canvasContext.strokeStyle = c;
-                    canvasContext.lineWidth = w;
-                    canvasContext.beginPath();
-                    canvasContext.moveTo(x1, y1);
-                    canvasContext.lineTo(x2, y2);
-                    canvasContext.closePath();
-                    canvasContext.stroke()
-                }
 
                 function drawCurrentBeats() {
                     beats.forEach(Element => {
-                        Element[0] += 1 / framesPerSecond;
-                        if (Element.length > 2) {
-                            drawCircle(Element[1][0], Element[1][1], Element[2], Element[3], Element[4], Element[5]);
+                        Element[1] += 1 / framesPerSecond;
+                        if (Element[0] == 0) {
+
+                            if (Element.length > 3) {
+                                drawCircle(Element[2][0], Element[2][1], Element[3], Element[4], Element[5], Element[6]);
+                            } else {
+                                drawCircle(Element[2][0], Element[2][1], defaultBeat.radius, defaultBeat.colour, defaultBeat.Bordersize, defaultBeat.BorderColour);
+                            }
                         } else {
-                            drawCircle(Element[1][0], Element[1][1], defaultBeat.radius, defaultBeat.colour, defaultBeat.Bordersize, defaultBeat.BorderColour);
+                            drawdragbackground(Element[2], "rgb(100,100,100,1)", defaultBeat.radius);
+                            if (dragstart == true) {
+                                dragbeatfunction();
+                            } else {
+                                drawCircle(Element[2][0][1][0], Element[2][0][1][1], defaultBeat.radius, defaultBeat.colour, defaultBeat.Bordersize, defaultBeat.BorderColour);
+                            }
                         }
                     });
-                    if (beats[0][0] >= failTimer) {
+                    if (beats[0][1] >= failTimer) {
                         beats.shift();
                     }
                 }
 
+                var dragstart = false;
+
+                function dragbeatfunction() { //y = mx + c || (y - c) / m = x
+                    if (mouseDown) {
+                        if (Math.abs(beats[0][2][0][1][0] - beats[0][2][1][1][0]) >= Math.abs(beats[0][2][0][1][1] - beats[0][2][1][1][1])) { //use x
+                            if (beats[0][2][1][1][0] - beats[0][2][0][1][0] < 0) {
+                                if (mouse[0] > beats[0][2][0][1][0]) {
+                                    mouse[0] = beats[0][2][0][1][0];
+                                }
+                            } else if (beats[0][2][1][1][0] - beats[0][2][0][1][0] > 0) {
+                                if (mouse[0] < beats[0][2][0][1][0]) {
+                                    mouse[0] = beats[0][2][0][1][0];
+                                }
+                            }
+                            let yintercept = beats[0][2][0][1][1] - (((beats[0][2][1][1][1] - beats[0][2][0][1][1]) / (beats[0][2][1][1][0] - beats[0][2][0][1][0])) * beats[0][2][0][1][0]);
+                            let ypos = (((beats[0][2][1][1][1] - beats[0][2][0][1][1]) / (beats[0][2][1][1][0] - beats[0][2][0][1][0])) * mouse[0]) + yintercept;
+                            let xpos = mouse[0];
+                            drawCircle(xpos, ypos, defaultBeat.radius, defaultBeat.colour, defaultBeat.Bordersize, defaultBeat.BorderColour);
+
+                            if (mouse[0] >= xpos - defaultBeat.radius && mouse[0] <= xpos + defaultBeat.radius && mouse[1] >= ypos - defaultBeat.radius && mouse[1] <= ypos + defaultBeat.radius) {
+                                let Yintercept1 = Math.sqrt(Math.abs(Math.pow(defaultBeat.radius, 2) - Math.pow(mouse[1] - ypos, 2))) + xpos;
+                                let Yintercept2 = (-Math.sqrt(Math.abs(Math.pow(defaultBeat.radius, 2) - Math.pow(mouse[1] - ypos, 2)))) + xpos;
+                                if (mouse[0] >= Yintercept2 && mouse[0] <= Yintercept1) {
+                                    if (beats[0][2][1][1][0] - beats[0][2][0][1][0] < 0) {
+                                        if (mouse[0] < beats[0][2][1][1][0]) {
+                                            dragComplete();
+                                        }
+                                    } else if (beats[0][2][1][1][0] - beats[0][2][0][1][0] > 0) {
+                                        if (mouse[0] > beats[0][2][1][1][0]) {
+                                            dragComplete();
+                                        }
+                                    }
+                                } else {
+                                    dragfail();
+                                }
+                            } else {
+                                dragfail();
+                            }
+                        } else { //use y
+                            if (beats[0][2][1][1][1] - beats[0][2][0][1][1] < 0) {
+                                if (mouse[1] > beats[0][2][0][1][1]) {
+                                    mouse[1] = beats[0][2][0][1][1];
+                                }
+                            } else if (beats[0][2][1][1][1] - beats[0][2][0][1][1] > 0) {
+                                if (mouse[1] < beats[0][2][0][1][1]) {
+                                    mouse[1] = beats[0][2][0][1][1];
+                                }
+                            }
+                            let yintercept = beats[0][2][0][1][1] - (((beats[0][2][1][1][1] - beats[0][2][0][1][1]) / (beats[0][2][1][1][0] - beats[0][2][0][1][0])) * beats[0][2][0][1][0]);
+                            let ypos = mouse[1];
+                            let xpos = (mouse[1] - yintercept) / ((beats[0][2][1][1][1] - beats[0][2][0][1][1]) / (beats[0][2][1][1][0] - beats[0][2][0][1][0]));
+                            drawCircle(xpos, ypos, defaultBeat.radius, defaultBeat.colour, defaultBeat.Bordersize, defaultBeat.BorderColour);
+
+                            if (mouse[0] >= xpos - defaultBeat.radius && mouse[0] <= xpos + defaultBeat.radius && mouse[1] >= ypos - defaultBeat.radius && mouse[1] <= ypos + defaultBeat.radius) {
+                                let Yintercept1 = Math.sqrt(Math.abs(Math.pow(defaultBeat.radius, 2) - Math.pow(mouse[1] - ypos, 2))) + xpos;
+                                let Yintercept2 = (-Math.sqrt(Math.abs(Math.pow(defaultBeat.radius, 2) - Math.pow(mouse[1] - ypos, 2)))) + xpos;
+                                if (mouse[0] >= Yintercept2 && mouse[0] <= Yintercept1) {
+                                    if (beats[0][2][1][1][1] - beats[0][2][0][1][1] < 0) {
+                                        if (mouse[1] > beats[0][2][1][1][0]) {
+                                            dragComplete();
+                                        }
+                                    } else if (beats[0][2][1][1][1] - beats[0][2][0][1][1] > 0) {
+                                        if (mouse[0] < beats[0][2][1][1][1]) {
+                                            dragComplete();
+                                        }
+                                    }
+                                } else {
+                                    dragfail();
+                                }
+                            } else {
+                                dragfail();
+                            }
+                        }
+                    } else {
+                        dragfail();
+                    }
+                }
+
+                function dragfail() {
+                    dragstart = false;
+                    console.log('fail');
+                    beats.shift();
+                }
+
+                function dragComplete() {
+                    console.log('complete!');
+                    beats.shift();
+                    dragstart = false;
+                }
+
                 function beatHitDetect() {
-                    if (beats[0].length > 2) {
-                        if (mouse[0] >= beats[0][1][0] - beats[0][2] && mouse[0] <= beats[0][1][0] + beats[0][2] && mouse[1] >= beats[0][1][1] - beats[0][2] && mouse[1] <= beats[0][1][1] + beats[0][2]) {
-                            let Yintercept1 = Math.sqrt(Math.abs(Math.pow(beats[0][2], 2) - Math.pow(mouse[1] - beats[0][1][1], 2))) + beats[0][1][0];
-                            let Yintercept2 = (-Math.sqrt(Math.abs(Math.pow(beats[0][2], 2) - Math.pow(mouse[1] - beats[0][1][1], 2)))) + beats[0][1][0];
-                            colourRect(Yintercept2, mouse[1], 1, 1, "rgb(255,255,255,1)")
-                            if (mouse[0] >= Yintercept2 && mouse[0] <= Yintercept1) {
-                                beats.shift();
-                                score++;
+                    if (beats[0][0] == 0) {
+                        if (beats[0].length > 3) {
+                            if (mouse[0] >= beats[0][2][0] - beats[0][3] && mouse[0] <= beats[0][2][0] + beats[0][3] && mouse[1] >= beats[0][2][1] - beats[0][3] && mouse[1] <= beats[0][2][1] + beats[0][3]) {
+                                console.log('hi')
+                                let Yintercept1 = Math.sqrt(Math.abs(Math.pow(beats[0][3], 2) - Math.pow(mouse[1] - beats[0][2][1], 2))) + beats[0][2][0];
+                                let Yintercept2 = (-Math.sqrt(Math.abs(Math.pow(beats[0][3], 2) - Math.pow(mouse[1] - beats[0][2][1], 2)))) + beats[0][2][0];
+                                if (mouse[0] >= Yintercept2 && mouse[0] <= Yintercept1) {
+                                    beats.shift();
+                                    score++;
+                                } else {
+                                    console.log("miss");
+                                }
                             } else {
                                 console.log("miss");
                             }
                         } else {
-                            console.log("miss");
+                            if (mouse[0] >= beats[0][2][0] - defaultBeat.radius && mouse[0] <= beats[0][2][0] + defaultBeat.radius && mouse[1] >= beats[0][2][1] - defaultBeat.radius && mouse[1] <= beats[0][2][1] + defaultBeat.radius) {
+                                let Yintercept1 = Math.sqrt(Math.abs(Math.pow(defaultBeat.radius, 2) - Math.pow(mouse[1] - beats[0][2][1], 2))) + beats[0][2][0];
+                                let Yintercept2 = (-Math.sqrt(Math.abs(Math.pow(defaultBeat.radius, 2) - Math.pow(mouse[1] - beats[0][2][1], 2)))) + beats[0][2][0];
+                                if (mouse[0] >= Yintercept2 && mouse[0] <= Yintercept1) {
+                                    beats.shift();
+                                    score++;
+                                } else {
+                                    console.log("miss");
+                                }
+                            } else {
+                                console.log("miss");
+                            }
                         }
                     } else {
-                        if (mouse[0] >= beats[0][1][0] - defaultBeat.radius && mouse[0] <= beats[0][1][0] + defaultBeat.radius && mouse[1] >= beats[0][1][1] - defaultBeat.radius && mouse[1] <= beats[0][1][1] + defaultBeat.radius) {
-                            let Yintercept1 = Math.sqrt(Math.abs(Math.pow(defaultBeat.radius, 2) - Math.pow(mouse[1] - beats[0][1][1], 2))) + beats[0][1][0];
-                            let Yintercept2 = (-Math.sqrt(Math.abs(Math.pow(defaultBeat.radius, 2) - Math.pow(mouse[1] - beats[0][1][1], 2)))) + beats[0][1][0];
-                            colourRect(Yintercept2, mouse[1], 1, 1, "rgb(255,255,255,1)")
+                        if (mouse[0] >= beats[0][2][0][1][0] - defaultBeat.radius && mouse[0] <= beats[0][2][0][1][0] + defaultBeat.radius && mouse[1] >= beats[0][2][0][1][1] - defaultBeat.radius && mouse[1] <= beats[0][2][0][1][1] + defaultBeat
+                            .radius) {
+                            let Yintercept1 = Math.sqrt(Math.abs(Math.pow(defaultBeat.radius, 2) - Math.pow(mouse[1] - beats[0][2][0][1][1], 2))) + beats[0][2][0][1][0];
+                            let Yintercept2 = (-Math.sqrt(Math.abs(Math.pow(defaultBeat.radius, 2) - Math.pow(mouse[1] - beats[0][2][0][1][1], 2)))) + beats[0][2][0][1][0];
                             if (mouse[0] >= Yintercept2 && mouse[0] <= Yintercept1) {
-                                beats.shift();
-                                score++;
+                                dragstart = true;
                             } else {
                                 console.log("miss");
                             }
@@ -219,13 +446,9 @@
                     }
                 }
 
-
-                function addBeat(x, y, type) {
-
-
-                }
-
                 function resizeCanvas() {
+                    document.getElementById("canvasContainer").style.width = screen.width + "px";
+                    document.getElementById("canvasContainer").style.height = screen.height + "px";
                     canvas.width = canvas.clientWidth;
                     canvas.height = canvas.clientHeight;
                 }
@@ -252,7 +475,6 @@
                         y: evt.clientY - rect.top
                     };
                 }
-
             </script>
         </canvas>
     </div>
@@ -272,7 +494,7 @@
         padding: 0;
         margin: 0;
         width: 100%;
-        height: 56.25%;
+        height: 100%;
     }
 
     * {
@@ -290,5 +512,4 @@
         margin-bottom: 50vw;
         font-size: 5vw;
     }
-
 </style>
