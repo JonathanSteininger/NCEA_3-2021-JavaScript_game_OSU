@@ -11,49 +11,51 @@
 
 <body>
   <div id="canvasContainer">
+    <!-- button required to go fullscreen. needs client imput -->
     <p><button onclick="goFullScreen();">Go Fullscreen</button></p>
     <canvas id="gameCanvas">
       <script>
         var canvas, ctx;
-        window.onload = function() {
+        window.onload = function() {//runs when the page loads
           canvas = document.getElementById("gameCanvas");
           ctx = canvas.getContext('2d');
 
-          canvas.addEventListener("mousedown", function(evt) {
-            var mousePos = getMousePos(canvas, evt);
-            mouseDown = true;
-            mouse[0] = mousePos.x;
-            mouse[1] = mousePos.y;
-            buttons();
+          canvas.addEventListener("mousedown", function(evt) {//detexts when the mouse has been pressed over canvas
+            var mousePos = getMousePos(canvas, evt);//gets the mouse position
+            mouseDown = true;//for all other functions
+            mouse[0] = mousePos.x;//for functions outside
+            mouse[1] = mousePos.y;//for functions outside
+            buttons();//checkes where you hit to what there is to hit
           }, false);
-          canvas.addEventListener("mouseup", function(evt) {
+          canvas.addEventListener("mouseup", function(evt) {//detects when the mouse is released
             mouseDown = false;
           }, false);
 
-          canvas.addEventListener('mousemove', function(evt) {
+          canvas.addEventListener('mousemove', function(evt) {//runs when you move your mouse over the canvas
             var mousePos = getMousePos(canvas, evt);
-            mouse[0] = mousePos.x;
+            mouse[0] = mousePos.x;//used for hover and drag beats
             mouse[1] = mousePos.y;
           }, false);
 
-          gamerun();
-          setInterval(mainloop, 1000 / framesPerSecond);
-          resizeCanvas();
-        }
+          gamerun();//creats variables
+          setInterval(mainloop, 1000 / framesPerSecond);//runs the canvas
+          resizeCanvas();//changes the sizes of the canvas to the screensize of client
+        }//func end
 
-        function goFullScreen() {
-          if (canvas.requestFullScreen)
+        function goFullScreen() {//makes the screen go into fullscreen
+          if (canvas.requestFullScreen){
             canvas.requestFullScreen();
-          else if (canvas.webkitRequestFullScreen)
+          }else if (canvas.webkitRequestFullScreen){
             canvas.webkitRequestFullScreen();
-          else if (canvas.mozRequestFullScreen)
+          }else if (canvas.mozRequestFullScreen){
             canvas.mozRequestFullScreen();
+          }
         }
 
-        function mainloop() {
-          colourRect(0, 0, canvas.width, canvas.height, "rgb(50,50,50,1)");
-          if (gamestate == "playing") {
-            if (currentMap.length <= 0 && beats.length <= 0) {
+        function mainloop() {//mainloop
+          colourRect(0, 0, canvas.width, canvas.height, "rgb(50,50,50,1)");//background
+          if (gamestate == "playing") {//if the game has started
+            if (currentMap.length <= 0 && beats.length <= 0) {//if the level is finished
               console.log(score);
               gamestate = "mainMenu";
               mapTimer = 0;
@@ -394,12 +396,15 @@
 
         function drawCurrentBeats() {
           beats.forEach(Element => {
-
             Element[1] += 1 / framesPerSecond;
             if (Element[0] == 0) {
+              if (Element[1] < 1) {
+                let colourforring = "rgb(255,255,255," + Element[1] * 0.7 + ")"
+                let sizeforring = defaultBeat.radius + (defaultBeat.radius * (1 - Element[1]));
+                drawCircle(Element[2][0], Element[2][1], sizeforring, "rgb(0,0,0,0)", defaultBeat.Bordersize, colourforring, 0, 2);
+              }
               drawCircle(Element[2][0], Element[2][1], defaultBeat.radius, makegradientforballs(Element[2][0], Element[2][1], defaultBeat.colourstart, defaultBeat.colourend), defaultBeat.Bordersize, defaultBeat.BorderColour, 0,
                 2);
-
             } else {
               drawdragbackground(Element[2], "rgb(100,100,100,1)", defaultBeat.radius);
               if (dragstart == true) {
@@ -497,27 +502,29 @@
           dragstart = false;
           console.log('fail');
           beats.shift();
+          score -= 5;
         }
 
         function dragComplete() {
           console.log('complete!');
           beats.shift();
           dragstart = false;
+          score += 5;
         }
 
         function beatHitDetect() {
           if (beats[0][0] == 0) {
             if (circlehitboxdetect(beats[0][2][0], beats[0][2][1], defaultBeat.radius, mouse[0], mouse[1])) {
+              score += (4 - Math.abs(1 - beats[0][1]))
               beats.shift();
-              score++;
             } else {
-              console.log("miss");
+              score -= 2;
             }
           } else {
             if (circlehitboxdetect(beats[0][2][0][1][0], beats[0][2][0][1][1], defaultBeat.radius, mouse[0], mouse[1])) {
               dragstart = true;
             } else {
-              console.log("miss");
+              score -= 2;
             }
           }
         }
@@ -535,7 +542,6 @@
             return false;
           }
         }
-
 
         function resizeCanvas() {
           document.getElementById("canvasContainer").style.width = screen.width + "px";
