@@ -4,131 +4,301 @@
 
 <head>
 
-    <title>osu!!-maker</title>
-    <script src="Maps.js"></script>
+  <title>osu!!-maker</title>
+  <script src="Maps.js"></script>
 </head>
 <meta charset="UTF-8">
 
 <body>
-    <div>
-        <p><button onclick="goFullScreen();">Go Fullscreen</button></p>
-        <canvas id="gameCanvas">
-            <script>
-                var canvas, canvasContext;
-                window.onload = function() {
-                    canvas = document.getElementById("gameCanvas");
-                    canvasContext = canvas.getContext('2d');
+  <div>
+    <p><button onclick="goFullScreen();">Go Fullscreen</button></p>
+    <canvas id="gameCanvas">
+      <script>
+        var canvas, canvasContext;
+        window.onload = function() {
+          canvas = document.getElementById("gameCanvas");
+          canvasContext = canvas.getContext('2d');
+          document.addEventListener('keydown', keyPressed); // sets the event for the keypressed func
+          document.addEventListener('keyup', keyReleased); // sets the event for the keyreleased func
 
-                    canvas.addEventListener("mousedown",function(evt) {
-                        var mousePos = getMousePos(canvas, evt);
-                        mouse[0] = mousePos.x;
-                        mouse[1] = mousePos.y;
-                        if (gamestart == false) {
-                            startbutton();
-                        } else {
-                            beatHitDetect();
-                        }
-                    }, false);
-                    setInterval(mainloop, 1000 / framesPerSecond);
-                    resizeCanvas();
-                }
+          canvas.addEventListener('mousemove', function(evt) { //runs when you move your mouse over the canvas
+            var mousePos = getMousePos(canvas, evt);
+            mouse[0] = mousePos.x; //used for hover and drag beats
+            mouse[1] = mousePos.y;
+          }, false);
 
-                function goFullScreen() {
-                    if (canvas.requestFullScreen)
-                        canvas.requestFullScreen();
-                    else if (canvas.webkitRequestFullScreen)
-                        canvas.webkitRequestFullScreen();
-                    else if (canvas.mozRequestFullScreen)
-                        canvas.mozRequestFullScreen();
-                }
+          canvas.addEventListener("mousedown", function(evt) { //detexts when the mouse has been pressed over canvas
+            var mousePos = getMousePos(canvas, evt); //gets the mouse position
+            mouse[0] = mousePos.x; //for functions outside
+            mouse[1] = mousePos.y; //for functions outside
+            beatHitDetect(); //checkes where you hit to what there is to hit
+          }, false);
+          setInterval(mainloop, 1000 / framesPerSecond);
+          resizeCanvas();
+          maptimer = 0;
+        }
 
-                function mainloop() {
-                    colourRect(0, 0, canvas.width, canvas.height, "rgb(1,1,1,1)");
-                    if (gamestart) {
-                        mapTimer += 1 / framesPerSecond;
-                    } else {
-                        colourRect(canvas.width / 4, canvas.height / 2, canvas.width / 2, canvas.height / 5, "rgb(255,0,0,1)");
-                    }
-                }
-                var gamestart = false;
-                var framesPerSecond = 60;
-                var mapTimer = 0;
-                var mouse = [0, 0];
-                
+        function goFullScreen() {
+          if (canvas.requestFullScreen)
+            canvas.requestFullScreen();
+          else if (canvas.webkitRequestFullScreen)
+            canvas.webkitRequestFullScreen();
+          else if (canvas.mozRequestFullScreen)
+            canvas.mozRequestFullScreen();
+        }
 
-                function startbutton() {
-                    if (mouse[0] >= canvas.width / 4 && mouse[0] <= canvas.width / 4 * 3 && mouse[1] >= canvas.height / 2 && mouse[1] <= canvas.height / 2 + canvas.height / 5) {
-                        gamestart = true;
-                    }
-                }
-                var newmap = [];
-                function beatHitDetect() {
-                    newmap.push([mapTimer,[mouse[0],mouse[1]]]);
-                }
-                function resizeCanvas() {
-                    canvas.width = canvas.clientWidth;
-                    canvas.height = canvas.clientHeight;
-                }
+        function mainloop() {
+          colourRect(0, 0, canvas.width, canvas.height, "rgb(1,1,1,1)");
+          drawmouseline();
+          canvasContext.font = "30px Arial";
+          canvasContext.fillStyle = "white";
+          canvasContext.fillText(maptimer + "time", 100, 100);
+        }
+        var gamestart = false;
+        var framesPerSecond = 60;
+        var maptimer = 0;
+        var mouse = [0, 0];
 
-                function drawCircle(x, y, radius, c, borderwidth, bordercolour) {
-                    canvasContext.strokeStyle = bordercolour;
-                    canvasContext.lineWidth = borderwidth;
-                    canvasContext.fillStyle = c;
-                    canvasContext.beginPath();
-                    canvasContext.arc(x, y, radius, 0, 2 * Math.PI);
-                    canvasContext.stroke();
-                    canvasContext.fill();
-                }
+        var keyEPressed = false;
+        var keyQPressed = false;
+        var keySPACEPressed = false;
 
-                function colourRect(x, y, w, h, c) {
-                    canvasContext.fillStyle = c;
-                    canvasContext.fillRect(x, y, w, h)
-                }
+        const SPACEKEYCODE = 32;
+        const EKEYCODE = 69;
+        const QKEYCODE = 81;
 
-                function getMousePos(canvas, evt) {
-                    var rect = canvas.getBoundingClientRect();
-                    return {
-                        x: evt.clientX - rect.left,
-                        y: evt.clientY - rect.top
-                    };
-                }
+        var spacereleased = true;
+        var spacereleased2 = true;
 
-            </script>
-        </canvas>
-    </div>
+        var addorminus = 1;
+
+        function keyPressed(evt) { //189
+          if (evt.keyCode == SPACEKEYCODE) {
+            maptimer += 1 / 60 * addorminus;
+          }
+          if (evt.keyCode == 49) {
+            maptimer += 10 / 60 * addorminus;
+          }
+          if (evt.keyCode == 50) {
+            maptimer += 20 / 60 * addorminus;
+          }
+          if (evt.keyCode == 51) {
+            maptimer += 30 / 60 * addorminus;
+          }
+          if (evt.keyCode == 52) {
+            maptimer += 40 / 60 * addorminus;
+          }
+          if (evt.keyCode == 53) {
+            maptimer += 50 / 60 * addorminus;
+          }
+          if (evt.keyCode == 54) {
+            maptimer += 60 / 60 * addorminus;
+          }
+          if (evt.keyCode == 55) {
+            maptimer += 70 / 60 * addorminus;
+          }
+          if (evt.keyCode == 56) {
+            maptimer += 80 / 60 * addorminus;
+          }
+          if (evt.keyCode == 57) {
+            maptimer += 90 / 60 * addorminus;
+          }
+          if (evt.keyCode == 48) {
+            maptimer += 5 * addorminus;
+          }
+          if (evt.keyCode == 189) {
+            addorminus = -1;
+          }
+          if (evt.keyCode == EKEYCODE && keyEPressed == false) {
+            keyEPressed = true;
+            rememberfirstcords();
+          }
+          if (evt.keyCode == QKEYCODE) {
+            dodrag();
+          } //49
+          if (evt.keyCode == QKEYCODE) {
+            dodrag();
+          }
+        }
+
+        function keyReleased(evt) {
+          if (evt.keyCode == EKEYCODE) {
+            newmap.push([1, alldragcordstemp[0][0], alldragcordstemp])
+            alldragcordstemp = [];
+            keyEPressed = false;
+            newmap.sort(function(a, b) { //sorts the cart in alphabetical order
+              let A = a[1]; // ignore upper and lowercase
+              let B = b[1]; // ignore upper and lowercase
+              if (A < B) {
+                return -1;
+              }
+              if (A > B) {
+                return 1;
+              }
+              return 0;
+            });
+          }
+          if (evt.keyCode == 189) {
+            addorminus = 1;
+          }
+        }
+        var alldragcordstemp = []; //[[time,[x,y]], [time,[x,y]], [time,[x,y]], [time,[x,y]]]
+
+        function rememberfirstcords() {
+          alldragcordstemp.push([maptimer - 1, [mouse[0], mouse[1]]])
+        }
+
+        function dodrag() {
+          if (keyEPressed) {
+            alldragcordstemp.push([maptimer - 1, [mouse[0], mouse[1]]])
+          }
+        }
+
+        function drawmouseline() {
+          if (newmap.length > 0) {
+            // console.log("running")
+            for (let i = 0; i < newmap.length; i++) {
+              if (newmap[i][1] + 1 <= maptimer && newmap[i][1] + 1 >= maptimer - 2 || newmap[i][1] - 1 <= maptimer && newmap[i][1] - 1 >= maptimer - 2) {
+                if (newmap[i][0] == 0) {
+                  // console.log("running")
+                  colourRect(newmap[i][2][0] - 25, newmap[i][2][1] - 25, 50, 50, "rgb(255,255,255,1)");
+                } else {
+                  canvasContext.strokeStyle = "rgb(200,200,200,1)";
+                  canvasContext.lineWidth = 20 * 2;
+                  canvasContext.beginPath();
+                  canvasContext.moveTo(newmap[i][2][0][1][0], newmap[i][2][0][1][1]);
+                  for (let ii = 1; ii < newmap[i][2].length; ii++) {
+                    canvasContext.lineTo(newmap[i][2][ii][1][0], newmap[i][2][ii][1][1]);
+                  }
+                  canvasContext.stroke()
+                }
+              }
+            }
+            drawallthelines();
+          }
+          if (keyEPressed) {
+            for (let i = 0; i < alldragcordstemp.length - 1; i++) {
+              drawpath(alldragcordstemp[i][1][0], alldragcordstemp[i][1][1], alldragcordstemp[i + 1][1][0], alldragcordstemp[i + 1][1][1], 5, "rgb(200,200,200,1)");
+            }
+            drawpath(alldragcordstemp[alldragcordstemp.length - 1][1][0], alldragcordstemp[alldragcordstemp.length - 1][1][1], mouse[0], mouse[1], 5, "rgb(200,200,200,1)");
+          }
+        }
+
+        function drawallthelines() {
+          if (newmap.length > 1) {
+            canvasContext.strokeStyle = "rgb(200,200,200,1)";
+            canvasContext.lineWidth = 10;
+            canvasContext.beginPath();
+            if (newmap[0][0] == 0) {
+              canvasContext.moveTo(newmap[0][2][0], newmap[0][2][1]);
+            } else {
+              canvasContext.moveTo(newmap[0][2][0][newmap[0][2][0].length - 1][0], newmap[0][2][0][newmap[0][2][0].length - 1][1]);
+            }
+            for (let iii = 0; iii < newmap.length; iii++) {
+              if (newmap[iii][0] == 0) {
+                canvasContext.lineTo(newmap[iii][2][0], newmap[iii][2][1]);
+              } else {
+                canvasContext.lineTo(newmap[iii][2][0][0][0], newmap[iii][2][0][0][1]);
+                canvasContext.moveTo(newmap[iii][2][0][newmap[iii][2][0].length - 1][0], newmap[iii][2][0][newmap[iii][2][0].length - 1][1]);
+              }
+            }
+            canvasContext.stroke();
+          }
+        }
+
+        function drawpath(x1, y1, x2, y2, w, c) {
+          canvasContext.strokeStyle = c;
+          canvasContext.lineWidth = w;
+          canvasContext.beginPath();
+          canvasContext.moveTo(x1, y1);
+          canvasContext.lineTo(x2, y2);
+          canvasContext.stroke();
+        }
+
+        function startbutton() {
+          if (mouse[0] >= canvas.width / 4 && mouse[0] <= canvas.width / 4 * 3 && mouse[1] >= canvas.height / 2 && mouse[1] <= canvas.height / 2 + canvas.height / 5) {
+            gamestart = true;
+          }
+        }
+        var newmap = [];
+
+        function beatHitDetect() {
+          newmap.push([0, maptimer - 1, [mouse[0], mouse[1]]]);
+          newmap.sort(function(a, b) { //sorts the cart in alphabetical order
+            let A = a[1]; // ignore upper and lowercase
+            let B = b[1]; // ignore upper and lowercase
+            if (A < B) {
+              return -1;
+            }
+            if (A > B) {
+              return 1;
+            }
+            return 0;
+          });
+        }
+
+        function resizeCanvas() {
+          canvas.width = canvas.clientWidth;
+          canvas.height = canvas.clientHeight;
+        }
+
+        function drawCircle(x, y, radius, c, borderwidth, bordercolour) {
+          canvasContext.strokeStyle = bordercolour;
+          canvasContext.lineWidth = borderwidth;
+          canvasContext.fillStyle = c;
+          canvasContext.beginPath();
+          canvasContext.arc(x, y, radius, 0, 2 * Math.PI);
+          canvasContext.stroke();
+          canvasContext.fill();
+        }
+
+        function colourRect(x, y, w, h, c) {
+          canvasContext.fillStyle = c;
+          canvasContext.fillRect(x, y, w, h)
+        }
+
+        function getMousePos(canvas, evt) {
+          var rect = canvas.getBoundingClientRect();
+          return {
+            x: evt.clientX - rect.left,
+            y: evt.clientY - rect.top
+          };
+        }
+      </script>
+    </canvas>
+  </div>
 </body>
 
 </html>
 
 <style>
-    div {
-        width: 1920px;
-        height: 1920px;
-        position: relative;
-    }
+  div {
+    width: 1920px;
+    height: 1920px;
+    position: relative;
+  }
 
-    canvas {
-        position: absolute;
-        padding: 0;
-        margin: 0;
-        width: 100%;
-        height: 56.25%;
-    }
+  canvas {
+    position: absolute;
+    padding: 0;
+    margin: 0;
+    width: 100%;
+    height: 56.25%;
+  }
 
-    * {
-        margin: 0;
-        padding: 0;
-    }
+  * {
+    margin: 0;
+    padding: 0;
+  }
 
-    html {
-        overflow-y: hidden;
-    }
+  html {
+    overflow-y: hidden;
+  }
 
-    button {
-        width: 100vw;
-        height: 50vh;
-        margin-bottom: 50vw;
-        font-size: 5vw;
-    }
-
+  button {
+    width: 100vw;
+    height: 50vh;
+    margin-bottom: 50vw;
+    font-size: 5vw;
+  }
 </style>
