@@ -116,90 +116,142 @@
           if (evt.keyCode == QKEYCODE) {
             dodrag();
           } //49
-          if (evt.keyCode == QKEYCODE) {
-            dodrag();
+          if (evt.keyCode == 8) {//backspace
+            newmap.pop();
           }
         }
 
         function keyReleased(evt) {
           if (evt.keyCode == EKEYCODE) {
-            newmap.push([1, alldragcordstemp[0][0], alldragcordstemp])
-            alldragcordstemp = [];
-            keyEPressed = false;
-            newmap.sort(function(a, b) { //sorts the cart in alphabetical order
-              let A = a[1]; // ignore upper and lowercase
-              let B = b[1]; // ignore upper and lowercase
-              if (A < B) {
-                return -1;
-              }
-              if (A > B) {
-                return 1;
-              }
-              return 0;
-            });
+            if (alldragcordstemp[3].length > 1){
+
+              alldragcordstemp[2] = maptimer - failTimer;
+              newmap.push(alldragcordstemp)
+              alldragcordstemp = [];
+              keyEPressed = false;
+              newmap.sort(function(a, b) { //sorts the cart in alphabetical order
+                let A = a[1]; // ignore upper and lowercase
+                let B = b[1]; // ignore upper and lowercase
+                if (A < B) {
+                  return -1;
+                }
+                if (A > B) {
+                  return 1;
+                }
+                return 0;
+              });
+            }else{
+              alldragcordstemp = [];
+            }
           }
           if (evt.keyCode == 189) {
             addorminus = 1;
           }
         }
-        var alldragcordstemp = []; //[[time,[x,y]], [time,[x,y]], [time,[x,y]], [time,[x,y]]]
+        var alldragcordstemp = []; //[type,starttime,endtime,[allpoints]]
 
         function rememberfirstcords() {
-          alldragcordstemp.push([maptimer - 1, [mouse[0], mouse[1]]])
+          alldragcordstemp = [1, maptimer - failTimer, "placeholder", [[mouse[0], mouse[1]]]];
         }
 
         function dodrag() {
           if (keyEPressed) {
-            alldragcordstemp.push([maptimer - 1, [mouse[0], mouse[1]]])
+            alldragcordstemp[3].push([mouse[0], mouse[1]]);
           }
         }
+        
 
         function drawmouseline() {
           if (newmap.length > 0) {
             // console.log("running")
+            drawallthelines();
             for (let i = 0; i < newmap.length; i++) {
-              if (newmap[i][1] + 1 <= maptimer && newmap[i][1] + 1 >= maptimer - 2 || newmap[i][1] - 1 <= maptimer && newmap[i][1] - 1 >= maptimer - 2) {
+              if (newmap[i][1] + failTimer <= maptimer && newmap[i][1] >= maptimer - failTimer*2 || newmap[i][1] <= maptimer && newmap[i][1]  >= maptimer - failTimer) {
                 if (newmap[i][0] == 0) {
                   // console.log("running")
-                  colourRect(newmap[i][2][0] - 25, newmap[i][2][1] - 25, 50, 50, "rgb(255,255,255,1)");
+                  if(newmap[i][1] > maptimer-failTimer){
+                    colourRect(newmap[i][2][0] - 25, newmap[i][2][1] - 25, 50, 50, "rgb(150,150,150,1)");
+                  }else{
+                    colourRect(newmap[i][2][0] - 25, newmap[i][2][1] - 25, 50, 50, "rgb(255,255,255,1)");
+                  }
+                  canvasContext.font = "20px Arial";
+                  canvasContext.fillStyle = "black";
+                  canvasContext.fillText(newmap[i][1]+2, newmap[i][2][0] - 25, newmap[i][2][1]);
                 } else {
-                  canvasContext.strokeStyle = "rgb(200,200,200,1)";
+                  if(newmap[i][1] > maptimer-failTimer){
+                    canvasContext.strokeStyle = "rgb(160,160,160,1)";
+                  }else{
+                    canvasContext.strokeStyle = "rgb(200,200,200,1)";
+                  }
                   canvasContext.lineWidth = 20 * 2;
                   canvasContext.beginPath();
-                  canvasContext.moveTo(newmap[i][2][0][1][0], newmap[i][2][0][1][1]);
-                  for (let ii = 1; ii < newmap[i][2].length; ii++) {
-                    canvasContext.lineTo(newmap[i][2][ii][1][0], newmap[i][2][ii][1][1]);
+                  canvasContext.moveTo(newmap[i][3][0][0], newmap[i][3][0][1]);
+                  for (let ii = 1; ii < newmap[i][3].length; ii++) {
+                    canvasContext.lineTo(newmap[i][3][ii][0], newmap[i][3][ii][1]);
                   }
                   canvasContext.stroke()
+                  colourRect(newmap[i][3][0][0] - 25, newmap[i][3][0][1] - 25, 50, 50, "rgb(255,255,255,1)");
+                  colourRect(newmap[i][3][newmap[i][3].length-1][0] - 25, newmap[i][3][newmap[i][3].length-1][1] - 25, 50, 50, "rgb(255,255,255,1)");
+                  canvasContext.font = "20px Arial";
+                  canvasContext.fillStyle = "black";
+                  canvasContext.fillText(newmap[i][1]+2, newmap[i][3][0][0], newmap[i][3][0][1]);
+                  canvasContext.fillText(newmap[i][2]+2, newmap[i][3][newmap[i][3].length-1][0], newmap[i][3][newmap[i][3].length-1][1]);
                 }
               }
             }
-            drawallthelines();
+            // drawallthelines();
           }
           if (keyEPressed) {
-            for (let i = 0; i < alldragcordstemp.length - 1; i++) {
-              drawpath(alldragcordstemp[i][1][0], alldragcordstemp[i][1][1], alldragcordstemp[i + 1][1][0], alldragcordstemp[i + 1][1][1], 5, "rgb(200,200,200,1)");
+            if (alldragcordstemp[3].length >= 2){
+
+              for (let i = 0; i < alldragcordstemp[3].length - 1; i++) {
+                drawpath(alldragcordstemp[3][i][0], alldragcordstemp[3][i][1], alldragcordstemp[3][i+1][0], alldragcordstemp[3][i+1][1], 5, "rgb(200,200,200,1)");
+              }// 1, 2, [[x,y],[x,y]]
             }
-            drawpath(alldragcordstemp[alldragcordstemp.length - 1][1][0], alldragcordstemp[alldragcordstemp.length - 1][1][1], mouse[0], mouse[1], 5, "rgb(200,200,200,1)");
+            // console.log(alldragcordstemp,alldragcordstemp[2])//here
+            drawpath(alldragcordstemp[3][alldragcordstemp[3].length - 1][0], alldragcordstemp[3][alldragcordstemp[3].length - 1][1], mouse[0], mouse[1], 5, "rgb(200,200,200,1)");
           }
         }
 
         function drawallthelines() {
+          var sc;
+          for(let i = 0; i < newmap.length;i++ ){
+            if (newmap[i][0] == 0){
+              if(newmap[i][1] >= maptimer-failTimer*2){
+                sc = i;
+                break;
+              }
+            }else{
+              if(newmap[i][2] >= maptimer-failTimer*2){
+                sc = i;
+                break;
+              }
+            }
+          }
           if (newmap.length > 1) {
             canvasContext.strokeStyle = "rgb(200,200,200,1)";
             canvasContext.lineWidth = 10;
             canvasContext.beginPath();
-            if (newmap[0][0] == 0) {
-              canvasContext.moveTo(newmap[0][2][0], newmap[0][2][1]);
+            if (newmap[sc][0] == 0) {
+              canvasContext.moveTo(newmap[sc][2][0], newmap[sc][2][1]);
             } else {
-              canvasContext.moveTo(newmap[0][2][0][newmap[0][2][0].length - 1][0], newmap[0][2][0][newmap[0][2][0].length - 1][1]);
+              canvasContext.moveTo(newmap[sc][3][newmap[sc][3].length - 1][0], newmap[sc][3][newmap[sc][3].length - 1][1]);
             }
-            for (let iii = 0; iii < newmap.length; iii++) {
+            for (let iii = sc; iii < newmap.length; iii++) {
               if (newmap[iii][0] == 0) {
-                canvasContext.lineTo(newmap[iii][2][0], newmap[iii][2][1]);
+                if(newmap[iii][1] <= maptimer){
+                  canvasContext.lineTo(newmap[iii][2][0], newmap[iii][2][1]);
+                }else{
+                  break;
+                }
               } else {
-                canvasContext.lineTo(newmap[iii][2][0][0][0], newmap[iii][2][0][0][1]);
-                canvasContext.moveTo(newmap[iii][2][0][newmap[iii][2][0].length - 1][0], newmap[iii][2][0][newmap[iii][2][0].length - 1][1]);
+                if(newmap[iii][2] <= maptimer){
+                  for (let d = 0; d < newmap[iii][3].length-1; d++) {
+                    canvasContext.lineTo(newmap[iii][3][d][0], newmap[iii][3][d][1]);
+                  }
+                }else{
+                  break;
+                }
               }
             }
             canvasContext.stroke();
@@ -223,7 +275,7 @@
         var newmap = [];
 
         function beatHitDetect() {
-          newmap.push([0, maptimer - 1, [mouse[0], mouse[1]]]);
+          newmap.push([0, maptimer - failTimer, [mouse[0], mouse[1]]]);
           newmap.sort(function(a, b) { //sorts the cart in alphabetical order
             let A = a[1]; // ignore upper and lowercase
             let B = b[1]; // ignore upper and lowercase
